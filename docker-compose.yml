@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   app:
-    build: .
+    image: fahadkabir123/flask-jwt-auth:latest
     ports:
       - '5001:5001' # Map host port 5001 to container port 5001
     environment:
