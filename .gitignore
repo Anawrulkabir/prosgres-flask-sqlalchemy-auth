@@ -1,0 +1,72 @@
+# Python specific
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.env
+*.venv
+*.egg
+*.egg-info/
+dist/
+build/
+*.log
+
+# Flask specific
+instance/
+*.sqlite3
+
+# Environment variables
+.env
+*.env
+
+# macOS specific
+.DS_Store
+
+# Docker specific
+docker-compose.override.yml
+*.pid
+
+# Logs
+logs/
+*.log
+
+# Byte-compiled / optimized / DLL files
+*.pyc
+*.pyo
+*.pyd
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# VS Code
+.vscode/
+
+# Database
+*.db
+*.sql
+*.sqlite3
+
+# Static files
+staticfiles/
+media/
+
+# Other
+*.swp
+*.swo
+*.bak
+*.tmp
+*.old
+*.orig
+*.rej
+*.sublime-workspace
+*.sublime-project
+*.idea/

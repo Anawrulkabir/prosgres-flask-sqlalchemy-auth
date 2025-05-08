@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - '5001:5001' # Map host port 5001 to container port 5001
+    environment:
+      - DATABASE_URL=postgresql://user:password@db:5432/auth_db
+      - JWT_SECRET_KEY=your-secret-key
+      - SECRET_KEY=your-flask-secret-key
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - auth-network
+
+  db:
+    image: postgres:13
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=auth_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - '5002:5432' # Expose PostgreSQL port to host
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U user -d auth_db']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - auth-network
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@admin.com
+      - PGADMIN_DEFAULT_PASSWORD=admin
+    ports:
+      - '5050:80' # Expose pgAdmin web interface on port 5050
+    depends_on:
+      - db
+    networks:
+      - auth-network
+
+volumes:
+  postgres_data:
+
+networks:
+  auth-network:
+    driver: bridge
