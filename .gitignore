@@ -50,10 +50,6 @@ htmlcov/
 # VS Code
 .vscode/
 
-# Database
-*.db
-*.sql
-*.sqlite3
 
 # Static files
 staticfiles/
