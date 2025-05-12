@@ -17,7 +17,8 @@ instance/
 
 # Environment variables
 .env
-*.env
+.env.pgAdmin
+
 
 # macOS specific
 .DS_Store

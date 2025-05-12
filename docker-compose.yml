@@ -6,9 +6,9 @@ services:
     ports:
       - '5001:5001' # Map host port 5001 to container port 5001
     environment:
-      - DATABASE_URL=postgresql://user:password@db:5432/auth_db
-      - JWT_SECRET_KEY=your-secret-key
-      - SECRET_KEY=your-flask-secret-key
+      - DATABASE_URL=${DATABASE_URL}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - SECRET_KEY=${SECRET_KEY}
     depends_on:
       db:
         condition: service_healthy
@@ -18,9 +18,9 @@ services:
   db:
     image: postgres:13
     environment:
-      - POSTGRES_USER=user
-      - POSTGRES_PASSWORD=password
-      - POSTGRES_DB=auth_db
+      - POSTGRES_USER={POSTGRES_USER}
+      - POSTGRES_PASSWORD={POSTGRES_PASSWORD}
+      - POSTGRES_DB={POSTGRES_DB}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
@@ -35,9 +35,8 @@ services:
 
   pgadmin:
     image: dpage/pgadmin4:latest
-    environment:
-      - PGADMIN_DEFAULT_EMAIL=admin@admin.com
-      - PGADMIN_DEFAULT_PASSWORD=admin
+    env_file:
+      - .env.pgAdmin
     ports:
       - '5050:80' # Expose pgAdmin web interface on port 5050
     depends_on:
