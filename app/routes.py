@@ -1,7 +1,7 @@
 from flask import request, jsonify
-from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity, get_jwt
+from flask_jwt_extended import create_access_token, create_refresh_token, jwt_required, get_jwt_identity, get_jwt
 from werkzeug.security import generate_password_hash, check_password_hash
-from .models import db, User, ResetToken, RevokedToken
+from .models import db, User, ResetToken, RevokedToken, RefreshToken
 from .utils import generate_reset_token, send_reset_email
 from datetime import datetime, timedelta
 import logging
@@ -68,14 +68,51 @@ def init_routes(app):
         user = User.query.filter_by(email=email).first()
 
         if not user or not check_password_hash(user.password, password):
+            logging.warning(f"Invalid sign-in attempt for email: {email}")
             return jsonify({'message': 'Invalid credentials'}), 401
 
-        access_token = create_access_token(identity=str(user.id))
-        return jsonify({
-            'message': 'Sign-in successful',
-            'access_token': access_token,
-            'user': {'name': user.name, 'email': user.email}
-        }), 200
+        try:
+            access_token = create_access_token(identity=str(user.id))
+            refresh_token = create_refresh_token(identity=str(user.id))
+            # Store refresh token
+            expires = datetime.utcnow() + timedelta(seconds=604800)  # 7 days
+            new_refresh_token = RefreshToken(user_id=user.id, token=refresh_token, expires_at=expires)
+            db.session.add(new_refresh_token)
+            db.session.commit()
+            logging.info(f"Sign-in successful for user: {email}")
+            return jsonify({
+                'message': 'Sign-in successful',
+                'access_token': access_token,
+                'refresh_token': refresh_token,
+                'user': {'name': user.name, 'email': user.email}
+            }), 200
+        except Exception as e:
+            db.session.rollback()
+            logging.error(f"Error during sign-in: {str(e)}")
+            return jsonify({'message': 'Error during sign-in', 'error': str(e)}), 500
+
+    # API: Refresh Token
+    @app.route('/api/refresh', methods=['POST'])
+    @jwt_required(refresh=True)
+    def api_refresh():
+        current_user = get_jwt_identity()
+        refresh_jti = get_jwt()['jti']
+
+        try:
+            token = RefreshToken.query.filter_by(token=refresh_jti, user_id=int(current_user)).first()
+            if not token or token.expires_at <= datetime.utcnow():
+                logging.warning(f"Invalid or expired refresh token for user_id: {current_user}")
+                return jsonify({'message': 'Invalid or expired refresh token'}), 401
+
+            new_access_token = create_access_token(identity=current_user)
+            logging.info(f"Access token refreshed for user_id: {current_user}")
+            return jsonify({
+                'message': 'Token refreshed successfully',
+                'access_token': new_access_token
+            }), 200
+        except Exception as e:
+            logging.error(f"Error refreshing token: {str(e)}")
+            return jsonify({'message': 'Error refreshing token', 'error': str(e)}), 500
 
     # API: Logout
     @app.route('/api/logout', methods=['POST'])
@@ -83,14 +120,20 @@ def init_routes(app):
     def api_logout():
         jti = get_jwt()['jti']
         try:
+            # Revoke access token
             revoked_token = RevokedToken(jti=jti)
             db.session.add(revoked_token)
+            # Revoke refresh token
+            refresh_jti = get_jwt()['jti']
+            refresh_token = RefreshToken.query.filter_by(token=refresh_jti).first()
+            if refresh_token:
+                db.session.delete(refresh_token)
             db.session.commit()
-            logging.info(f"Token revoked: {jti}")
-            return jsonify({'message': 'Logout successful. Token revoked.'}), 200
+            logging.info(f"Logout successful, tokens revoked: {jti}")
+            return jsonify({'message': 'Logout successful. Tokens revoked.'}), 200
         except Exception as e:
             db.session.rollback()
-            logging.error(f"Error revoking token: {str(e)}")
+            logging.error(f"Error revoking tokens: {str(e)}")
             return jsonify({'message': 'Error during logout', 'error': str(e)}), 500
 
     # API: Forgot Password
