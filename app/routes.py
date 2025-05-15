@@ -225,3 +225,8 @@ def init_routes(app):
     @app.route('/api/public', methods=['GET'])
     def api_public():
         return jsonify({'message': 'This is a public endpoint'}), 200
+    
+    # base route 
+    @app.route('/' , methods=['GET'])
+    def base_route():
+        return jsonify({'message': 'Welcome to JWT Auth API', 'status': 'online'}), 200

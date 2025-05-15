@@ -126,6 +126,7 @@ This implementation uses both access tokens (short-lived) and refresh tokens (lo
 | POST | `/api/forgot-password` | Request password reset | No |
 | POST | `/api/reset-password/<token>` | Reset password with token | No |
 | GET | `/api/public` | Public endpoint example | No |
+| GET | `/` | Public endpoint example | No |
 
 ### Authentication Flow
 
