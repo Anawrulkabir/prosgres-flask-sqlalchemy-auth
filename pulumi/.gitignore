@@ -1,0 +1,21 @@
+*.pyc
+__pycache__/
+venv/
+
+# Pulumi-specific
+.pulumi/
+
+# Stack files - consider which ones you want to include/exclude
+# Comment out if you want to track these files
+Pulumi.*.yaml
+
+# Security and key files
+*.pem
+*.key
+*.pub
+*.crt
+*.cer
+
+# Environment variables
+.env
+.env.*

@@ -51,10 +51,20 @@ htmlcov/
 # VS Code
 .vscode/
 
-
 # Static files
 staticfiles/
 media/
+
+# SSH Keys and security files
+*.pem
+*.key
+*.pub
+*.crt
+*.cer
+
+# Pulumi
+.pulumi/
+Pulumi.*.yaml
 
 # Other
 *.swp

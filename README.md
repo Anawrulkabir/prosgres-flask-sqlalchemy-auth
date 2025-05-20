@@ -15,6 +15,10 @@ A secure and scalable JWT authentication system built with Flask, PostgreSQL, an
   - [API Examples](#examples)
 - [Database Management](#database-management)
 - [Development](#development)
+- [Cloud Deployment with Pulumi](#cloud-deployment-with-pulumi)
+  - [AWS Deployment Prerequisites](#aws-deployment-prerequisites)
+  - [Deploying to AWS](#deploying-to-aws)
+  - [Accessing Cloud Deployed Services](#accessing-cloud-deployed-services)
 - [Testing with Postman](#testing-with-postman)
 - [Troubleshooting](#troubleshooting)
 - [License](#license)
@@ -211,32 +215,128 @@ docker build -t your-username/flask-jwt-auth:latest .
 docker push your-username/flask-jwt-auth:latest
 ```
 
-## Troubleshooting
+## Cloud Deployment with Pulumi
 
-- **Database Connection Issues**:
+This project includes infrastructure as code using Pulumi to deploy the application to AWS.
 
-  ```bash
-  docker-compose exec db psql -U user -d auth_db -c "SELECT 1"
-  ```
+### AWS Deployment Prerequisites
 
-- **Check Container Logs**:
+- AWS account with appropriate permissions
+- AWS CLI configured with access credentials
+- Python 3.6+ installed
+- Pulumi CLI installed and configured
 
-  ```bash
-  docker-compose logs app
-  docker-compose logs db
-  ```
+### Deploying to AWS
 
-- **Reset All Containers and Data**:
+1. **Generate SSH Key Pair** (first time only):
 
-  ```bash
-  docker-compose down -v
-  docker-compose up -d
-  ```
+   ```bash
+   # Generate a new SSH key pair
+   ssh-keygen -t rsa -b 2048 -f ~/jwt-key-pair.pem -N ""
+   
+   # Change permissions to secure the private key
+   chmod 400 ~/jwt-key-pair.pem
+   
+   # Extract the public key in the format needed for AWS
+   ssh-keygen -y -f ~/jwt-key-pair.pem > ~/jwt-key-pair.pub
+   ```
 
-- **No Tables in pgAdmin**:
-  - Refresh the browser
-  - Navigate to: Servers > PostgreSQL > Databases > auth_db > Schemas > public > Tables
-  - Right-click and refresh
+2. **Navigate to Pulumi Directory**:
+
+   ```bash
+   cd pulumi
+   ```
+
+3. **Update the Public Key in __main__.py**:
+   
+   Open the `__main__.py` file and replace the existing public key with your newly generated one:
+   
+   ```bash
+   # Get the content of your public key
+   cat ~/jwt-key-pair.pub
+   
+   # Copy the output and replace the public_key value in __main__.py
+   # It should look like: "public_key": "ssh-rsa AAAA..."
+   ```
+
+4. **Install Pulumi Dependencies**:
+
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+5. **Configure AWS Credentials**:
+
+   ```bash
+   export AWS_ACCESS_KEY_ID=your_access_key
+   export AWS_SECRET_ACCESS_KEY=your_secret_key
+   export AWS_REGION=ap-southeast-1  # Adjust region if needed
+   ```
+
+6. **Deploy the Infrastructure**:
+
+   ```bash
+   # No need to initialize a stack first, just run:
+   pulumi up
+   ```
+
+   Review the proposed changes and confirm the deployment.
+
+6. **Access Deployment Outputs**:
+
+   ```bash
+   pulumi stack output
+   ```
+
+   This command will display:
+   - VPC ID
+   - Subnet ID
+   - EC2 Instance Public IP & DNS
+   - URLs for accessing the application and pgAdmin
+
+### Accessing Cloud Deployed Services
+
+After successful deployment, you can access:
+
+- **Flask API**: `http://<instance_public_ip>:5001`
+- **pgAdmin**: `http://<instance_public_ip>:5050` (login with admin@admin.com/admin)
+
+To SSH into the instance:
+
+```bash
+ssh -i ~/jwt-key-pair.pem ubuntu@<instance_public_ip>
+```
+
+### Infrastructure Components
+
+The Pulumi deployment creates:
+
+- VPC with public subnet
+- Internet Gateway and routing
+- Security Group (allowing ports 22, 80, 5001, 5002, 5050)
+- EC2 instance running Ubuntu 24.04
+- Docker and Docker Compose installation
+- Automated application deployment from GitHub
+
+### Managing the Infrastructure
+
+After deployment, you can manage your Pulumi stack with these commands:
+
+```bash
+# Check for any changes without applying them
+cd pulumi
+pulumi refresh
+
+# Apply any changes or updates to the infrastructure
+cd pulumi
+pulumi up
+
+# Tear down all resources when you're done
+cd pulumi
+pulumi destroy
+```
+
+**Note:** You don't need to specify a stack name with these commands as Pulumi will use the current stack context.
 
 ## Testing with Postman
 
